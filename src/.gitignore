@@ -13,9 +13,3 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
-# Laravel & Docker環境用
-/vendor/
-.env
-storage/
-bootstrap/cache/
-docker/mysql/data/
