@@ -59,3 +59,32 @@ Docker環境でLaravel 8を構築し、nginx・PHP・MySQL・phpMyAdminを連携
 1. 所有者の変更（WSLユーザーに戻す）：
    ```bash
    sudo chown -R shiny:shiny ~/coachtech/laravel/advance-laravel/src
+
+## Docker構成整理メモ
+
+### 📂 ディレクトリ構造と目的
+
+- `./docker/php/Dockerfile`：PHP環境定義（Composerセットアップ含む）
+- `docker-compose.yml`：Laravel開発環境（nginx + php + mysql）構成の統括
+- `./src`：Laravelアプリケーション本体（nginx・phpともにここを `/var/www/` にマウント）
+
+### ✅ docker-compose.ymlの重要設定
+
+```yaml
+php:
+  build: ./docker/php
+  volumes:
+    - ./src:/var/www/
+
+## MySQLコンテナへの接続
+
+- コンテナ名: `advance-laravel-mysql-1`
+- bashログイン: `docker exec -it advance-laravel-mysql-1 bash`
+- MySQL接続: `mysql -u root -p`（パスワード: root）
+注意点: 
+  - 入力待ちの状態でコマンドを2回重ねないよう注意（`->`が出たら`\c`でキャンセル可能）
+### トラブル対応
+
+- `No such container` → `docker ps` でコンテナ名の確認必須
+- `Access denied` → ユーザー名・パスワード設定の再確認
+
