@@ -88,3 +88,62 @@ php:
 - `No such container` → `docker ps` でコンテナ名の確認必須
 - `Access denied` → ユーザー名・パスワード設定の再確認
 
+## STEP02: マイグレーション編（テーブル作成準備）
+
+- 実行環境: DockerのPHPコンテナ内（advance-laravel-php-1）
+- 作成コマンド:
+  ```bash
+  php artisan make:migration create_authors_table
+
+## トラブル対応：マイグレーションファイルの書き込み権限エラー
+
+- 現象: `create_authors_table.php` の編集時に VSCode で「permission denied」
+- 原因: ファイル所有者が `root:root`（他は `shiny:shiny`）
+- 対処: 以下のコマンドで修正
+  ```bash
+  sudo chown -R shiny:shiny ~/coachtech/laravel/advance-laravel/src
+
+## STEP02: マイグレーション編（実行結果）
+
+- 実行環境: DockerのPHPコンテナ（advance-laravel-php-1）
+- コマンド: `php artisan migrate`
+- 実行結果: 以下のテーブルが作成された
+  - users
+  - password_resets
+  - failed_jobs
+  - personal_access_tokens
+  - authors
+
+- authorsテーブルについて:
+  - カラム: id, name, age, nationality, created_at, updated_at
+  - 設計意図: 基本的な著者情報を管理する構成
+
+- 注意点:
+  - `Deprecated: mbstring.internal_encoding` 警告 → Laravel動作には影響なし
+
+## STEP02: データを作成しよう - マイグレーション編
+
+### 学習内容
+
+- マイグレーションファイルの作成：
+  - `php artisan make:migration create_authors_table`
+- authorsテーブルの設計：
+  - `name`, `age`, `nationality`, `created_at`, `updated_at`
+- 権限エラー対応：
+  - `sudo chown shiny:shiny create_authors_table.php` で書き込み許可修正
+- マイグレーション実行：
+  - `php artisan migrate`
+  - 教材仕様に合わせて `php artisan migrate:fresh` を実施
+- MySQL内でテーブルの存在確認
+
+### 補足
+
+- `.env` に正しいDB接続設定を反映済み（`laravel_user` / `laravel_db`）
+- `migrate:fresh` は教材用の初期化目的で使用 → 本番環境では使用禁止
+- `timestamps()` は使用せず `useCurrent()->nullable()` で明示制御
+- VSCode + Docker環境におけるファイル権限の注意点も記録済み
+
+### Git操作
+
+- 作業ブランチ：`feature/step-02-migration`
+- `develop` に統合後 PR作成予定
