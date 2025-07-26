@@ -194,3 +194,31 @@ sudo chown $USER:$USER /home/shiny/coachtech/laravel/advance-laravel/src/databas
    {
        $this->call(AuthorsTableSeeder::class);
    }
+
+# STEP: Docker × Laravel 環境構築 - UID/GIDによるユーザー制御
+
+## 🎯 ゴール
+Laravel開発環境をホストユーザー（例: shiny）で安全に動作させ、Permission denied問題を防止する。
+
+---
+
+## 1️⃣ `.env` の役割分離
+
+| ファイルパス | 用途 | 内容例 | 注意点 |
+|--------------|------|--------|--------|
+| `.env`（Docker用） | docker-compose.yml の `${UID}` `${GID}` 展開に使用 | `UID=1000`<br>`GID=1000` | 必ず拡張子なしで配置 |
+| `src/.env`（Laravel用） | Laravelアプリの設定値を管理 | APP_KEY / DB接続 / Driverなど | UID/GIDは不要→混乱の元になるため削除推奨 |
+
+---
+
+## 2️⃣ Docker 起動ステップ
+
+```bash
+# `.env` の確認と配置
+ls -l .env           # advance-laravel/.env に存在するか
+mv env.compose .env  # 拡張子付きはNG → 拡張子なしへ修正
+
+# 起動＆ユーザー確認
+docker compose up -d
+docker compose exec php id
+# → uid=1000 gid=1000 なら成功！
