@@ -147,3 +147,50 @@ php:
 
 - 作業ブランチ：`feature/step-02-migration`
 - `develop` に統合後 PR作成予定
+
+### PHPコンテナ内に移動するコマンド
+docker exec -it advance-laravel-php-1 bash
+
+## STEP03 環境構築トラブル - Seeder作成時の権限エラー対応
+
+### 🐞 発生事象
+`AuthorsTableSeeder.php` 作成時に以下のエラーが発生：
+EACCES: permission denied, open '...AuthorsTableSeeder.php'
+
+コンテナ内でファイルを生成したため、ホストユーザーが編集・保存できず。
+
+### 🔍 原因
+- Dockerコンテナ（`www-data`など）で作成されたファイル → ホストからアクセス拒否
+- `docker-compose.yml` に `user:` 指定がないため、UID/GIDの不一致が発生
+- ホストユーザーは `UID=1000` / `GID=1000`（Linux環境）
+
+### ✅ 対処方法
+
+#### 1. `docker-compose.yml` でユーザーを指定
+```yaml
+php:
+  build: ./docker/php
+  user: "${UID}:${GID}"
+  volumes:
+    - ./src:/var/www/
+2. .env に UID/GID を定義（Linux環境）
+env
+UID=1000
+GID=1000
+
+3. ホスト側で所有権を修正（既存ファイル用）
+bash
+sudo chown $USER:$USER /home/shiny/coachtech/laravel/advance-laravel/src/databas
+
+## STEP03: Seeder作成・実行手順
+
+### ✅ 作成手順
+
+1. `database/seeders/AuthorsTableSeeder.php` を作成  
+   → `Author` モデルを使用してデータ4件を挿入
+2. `DatabaseSeeder.php` に登録  
+   ```php
+   public function run(): void
+   {
+       $this->call(AuthorsTableSeeder::class);
+   }
