@@ -222,3 +222,57 @@ mv env.compose .env  # 拡張子付きはNG → 拡張子なしへ修正
 docker compose up -d
 docker compose exec php id
 # → uid=1000 gid=1000 なら成功！
+
+
+## STEP-13：Laravelモデルとテーブルの紐づけ確認方法
+
+### 🧠 自動紐づけ規則
+- モデル名：単数形（例：Author）
+- テーブル名：複数形（例：authors）
+- Eloquentが慣習により自動的に紐づけ
+
+### 🧪 動的に確認する方法（tinker使用）
+```bash
+XDG_CONFIG_HOME=/var/www/.config php artisan tinker
+>>> App\Models\Author::query()->getModel()->getTable();
+=> "authors"
+なっていればOK
+
+## Laravel×Docker：tinker起動成功と環境構成
+
+LaravelのtinkerがDocker環境下で起動失敗する場合、以下の対策で成功：
+
+### 対策内容
+
+- docker-compose.ymlにて `XDG_CONFIG_HOME=/var/www/.config` をphpコンテナに指定
+- `/var/www/.config/psysh` のディレクトリ権限をUID/GIDで調整（mkdir + chown）
+
+### 起動成功時の表示例
+
+```bash
+php artisan tinker
+Psy Shell v0.12.9 (PHP 8.2.29 — cli) by Justin Hileman
+>
+## STEP-13：Migration & Seeder結果確認
+
+### artisanログで確認するポイント
+- `Dropped all tables successfully.` → テーブル削除完了
+- `Migrated:` が各テーブルで表示 → Migration正常処理
+- `Seeding:` → 登録Seeder実行開始
+- `Database seeding completed successfully.` → ダミーデータ投入完了
+
+### tinker確認推奨
+```bash
+php artisan tinker
+>>> App\Models\Author::count();  // 件数確認
+>>> App\Models\Author::pluck('name'); // 内容確認
+## STEP-13：最終確認とdevelopマージ
+
+### 確認手順
+- Laravel環境に入る：`docker compose exec php bash`
+- 依存インストール：`composer install`
+- DB初期化＆Seeder：`php artisan migrate:fresh --seed`
+- ダミーデータ確認：
+```bash
+php artisan tinker
+>>> App\Models\Author::count(); // 件数確認

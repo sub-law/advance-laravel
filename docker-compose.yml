@@ -16,6 +16,8 @@ services:
     volumes:
       - ./src:/var/www/
     user: "${UID}:${GID}"
+    environment:
+      - XDG_CONFIG_HOME=/var/www/.config
 
   mysql:
     image: mysql:8.0.26
