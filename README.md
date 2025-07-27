@@ -276,3 +276,29 @@ php artisan tinker
 ```bash
 php artisan tinker
 >>> App\Models\Author::count(); // 件数確認
+
+## 🎯 学習目的
+
+- Laravel MVCの基本連携（Model → Controller → View）を理解する
+- DBから取得したデータをViewで表示するまでの流れを実装
+
+---
+
+## ⚙️ 実装構成
+
+| 種別       | ファイル              | 主な処理                                             |
+|------------|-----------------------|------------------------------------------------------|
+| Route      | `web.php`             | `'/'` ルートから `AuthorController@index()` を呼び出し |
+| Controller | `AuthorController.php`| `Author::all()` によるデータ取得 → `view()` で渡す     |
+| Model      | `Author.php`          | `authors` テーブルと連携（Eloquent）                  |
+| View       | `index.blade.php`     | `$authors` を `@foreach` で表示（テーブル形式）       |
+| Layout     | `default.blade.php`   | `@extends` による共通レイアウト提供                   |
+
+---
+
+## 📌 技術ポイント
+
+- **Eloquent**：`Author::all()` で全件取得
+- **Blade構文**：`@extends`, `@section`, `@foreach`
+- **レイアウト分離**：共通レイアウトに個別ビューをはめ込む構成
+- **Controller継承**：`extends Controller` により Laravel の機能を活用可能

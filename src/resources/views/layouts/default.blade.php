@@ -27,8 +27,9 @@
 
 <body>
     <h1>@yield('title')</h1>
-    <divclass="content">
+    <div class="content">
         @yield('content')
+    </div>
 </body>
 
 </html>
