@@ -302,3 +302,46 @@ php artisan tinker
 - **Blade構文**：`@extends`, `@section`, `@foreach`
 - **レイアウト分離**：共通レイアウトに個別ビューをはめ込む構成
 - **Controller継承**：`extends Controller` により Laravel の機能を活用可能
+
+
+# 📚 Author管理アプリ（Create〜一覧表示）
+
+## 🧭 情報処理の流れ
+
+1. ユーザーが `/add` にアクセス
+2. `add.blade.php` の入力フォームを表示
+3. ユーザーが「name / age / nationality」を入力して送信（POST `/add`）
+4. `AuthorController@create()` が呼び出され、フォームデータを取得
+5. モデル `Author::create()` 経由でDBに登録
+6. 登録後、`redirect('/')` により一覧画面に遷移
+7. `AuthorController@index()` で登録済みデータを取得
+8. `index.blade.php` にて一覧表示
+
+---
+
+## 🗂 ファイル構成と役割
+
+| ファイル | 役割 | 詳細 |
+|---------|------|------|
+| `web.php` | ルート定義 | `/add` に GET（表示）と POST（保存）、 `/` に GET（一覧）を割り当て |
+| `AuthorController.php` | コントローラー | `add()`でフォーム表示、`create()`で保存、`index()`で一覧取得 |
+| `Author.php` | モデル | `$fillable` により安全なデータ登録が可能。EloquentでDB操作を抽象化 |
+| `add.blade.php` | 入力フォーム画面 | ユーザー入力フォームを提供（`@csrf` によるセキュリティ対策） |
+| `index.blade.php` | 一覧表示画面 | 登録された Author データを表として表示（※表示テンプレートは別途作成） |
+
+---
+
+## 🛠 技術補足ポイント
+
+- POST処理には `@csrf` を使用 → CSRF対策済み
+- モデルに `protected $fillable = [...]` を指定 → Mass assignment の安全管理
+- 登録後の `redirect('/')` により、一覧画面へ遷移 → UX向上
+
+---
+
+## 🚀 今後の展開候補
+
+- `create()` にバリデーション追加（`$request->validate()`）
+- 一覧画面に「編集・削除」リンク追加 → CRUD化へ発展
+- Copilot Pages で教材STEPを整理 → ノウハウ資産化
+
