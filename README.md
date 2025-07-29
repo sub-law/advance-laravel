@@ -369,3 +369,51 @@ edit.blade.php に $form として表示
 AuthorController@update で $request->id をもとに Author::find()->update() を実行
 
 更新後、redirect('/') で一覧ページへ
+
+🧭 Laravel教材STEP：削除処理の基本実装（CRUD "Delete"）
+🚀 処理概要フロー
+/delete?id={id} にアクセス → 該当Authorのデータ取得
+
+delete.blade.php にて削除対象データの表示＆確認
+
+ユーザーが「送信」ボタンをクリック → POST リクエスト送信
+
+Controller側で削除処理 → TOPページにリダイレクト
+
+🧩 使用ファイルと役割
+ファイル名	役割・機能
+AuthorController.php	削除画面表示（delete()）＋削除処理（remove()）
+delete.blade.php	対象Authorデータの表示＋削除フォーム
+web.php	/delete の GET/POST ルート定義
+
+🧠 Controller詳細
+php
+// 削除画面の表示（GET）
+public function delete(Request $request)
+{
+    $author = Author::find($request->id);
+    return view('delete', ['author' => $author]);
+}
+
+// 実際の削除処理（POST）
+public function remove(Request $request)
+{
+    Author::find($request->id)->delete();
+    return redirect('/');
+}
+✅ delete() は対象データの表示 ✅ remove() はデータの削除とリダイレクト処理 🚫 delete($request->id) のような直接削除はNG（deleteはインスタンスメソッド）
+
+🖥️ Bladeテンプレート（delete.blade.php）
+blade
+<form action="/delete?id={{ $author->id }}" method="POST">
+    @csrf
+    <button>送信</button>
+</form>
+UIで削除対象情報を確認
+
+明示的に「送信」操作で削除を許可
+
+🔍 理解のポイント
+find($request->id)：ID指定でモデル取得
+
+->delete()：取得したインスタンスに対して削除命令（引数なし）
