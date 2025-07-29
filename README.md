@@ -345,3 +345,27 @@ php artisan tinker
 - 一覧画面に「編集・削除」リンク追加 → CRUD化へ発展
 - Copilot Pages で教材STEPを整理 → ノウハウ資産化
 
+## 1-16データの更新
+A[ユーザーが編集画面へアクセス] --> B[AuthorController@edit で対象データ取得]
+B --> C[edit.blade.php に表示]
+C --> D[ユーザーがフォームで編集＆送信]
+D --> E[AuthorController@update が受け取る]
+E --> F[リクエストデータを整形・更新処理]
+F --> G[DB に保存され、トップ画面へリダイレクト]
+
+📌 各ステップのポイント
+画面表示（GET）
+
+/edit?id=◯◯ にアクセス
+
+AuthorController@edit が該当 ID のデータを取得
+
+edit.blade.php に $form として表示
+
+フォーム送信（POST）
+
+入力された値が Request オブジェクトに格納される
+
+AuthorController@update で $request->id をもとに Author::find()->update() を実行
+
+更新後、redirect('/') で一覧ページへ
