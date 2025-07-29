@@ -194,3 +194,226 @@ sudo chown $USER:$USER /home/shiny/coachtech/laravel/advance-laravel/src/databas
    {
        $this->call(AuthorsTableSeeder::class);
    }
+
+# STEP: Docker × Laravel 環境構築 - UID/GIDによるユーザー制御
+
+## 🎯 ゴール
+Laravel開発環境をホストユーザー（例: shiny）で安全に動作させ、Permission denied問題を防止する。
+
+---
+
+## 1️⃣ `.env` の役割分離
+
+| ファイルパス | 用途 | 内容例 | 注意点 |
+|--------------|------|--------|--------|
+| `.env`（Docker用） | docker-compose.yml の `${UID}` `${GID}` 展開に使用 | `UID=1000`<br>`GID=1000` | 必ず拡張子なしで配置 |
+| `src/.env`（Laravel用） | Laravelアプリの設定値を管理 | APP_KEY / DB接続 / Driverなど | UID/GIDは不要→混乱の元になるため削除推奨 |
+
+---
+
+## 2️⃣ Docker 起動ステップ
+
+```bash
+# `.env` の確認と配置
+ls -l .env           # advance-laravel/.env に存在するか
+mv env.compose .env  # 拡張子付きはNG → 拡張子なしへ修正
+
+# 起動＆ユーザー確認
+docker compose up -d
+docker compose exec php id
+# → uid=1000 gid=1000 なら成功！
+
+
+## STEP-13：Laravelモデルとテーブルの紐づけ確認方法
+
+### 🧠 自動紐づけ規則
+- モデル名：単数形（例：Author）
+- テーブル名：複数形（例：authors）
+- Eloquentが慣習により自動的に紐づけ
+
+### 🧪 動的に確認する方法（tinker使用）
+```bash
+XDG_CONFIG_HOME=/var/www/.config php artisan tinker
+>>> App\Models\Author::query()->getModel()->getTable();
+=> "authors"
+なっていればOK
+
+## Laravel×Docker：tinker起動成功と環境構成
+
+LaravelのtinkerがDocker環境下で起動失敗する場合、以下の対策で成功：
+
+### 対策内容
+
+- docker-compose.ymlにて `XDG_CONFIG_HOME=/var/www/.config` をphpコンテナに指定
+- `/var/www/.config/psysh` のディレクトリ権限をUID/GIDで調整（mkdir + chown）
+
+### 起動成功時の表示例
+
+```bash
+php artisan tinker
+Psy Shell v0.12.9 (PHP 8.2.29 — cli) by Justin Hileman
+>
+## STEP-13：Migration & Seeder結果確認
+
+### artisanログで確認するポイント
+- `Dropped all tables successfully.` → テーブル削除完了
+- `Migrated:` が各テーブルで表示 → Migration正常処理
+- `Seeding:` → 登録Seeder実行開始
+- `Database seeding completed successfully.` → ダミーデータ投入完了
+
+### tinker確認推奨
+```bash
+php artisan tinker
+>>> App\Models\Author::count();  // 件数確認
+>>> App\Models\Author::pluck('name'); // 内容確認
+## STEP-13：最終確認とdevelopマージ
+
+### 確認手順
+- Laravel環境に入る：`docker compose exec php bash`
+- 依存インストール：`composer install`
+- DB初期化＆Seeder：`php artisan migrate:fresh --seed`
+- ダミーデータ確認：
+```bash
+php artisan tinker
+>>> App\Models\Author::count(); // 件数確認
+
+## 🎯 学習目的
+
+- Laravel MVCの基本連携（Model → Controller → View）を理解する
+- DBから取得したデータをViewで表示するまでの流れを実装
+
+---
+
+## ⚙️ 実装構成
+
+| 種別       | ファイル              | 主な処理                                             |
+|------------|-----------------------|------------------------------------------------------|
+| Route      | `web.php`             | `'/'` ルートから `AuthorController@index()` を呼び出し |
+| Controller | `AuthorController.php`| `Author::all()` によるデータ取得 → `view()` で渡す     |
+| Model      | `Author.php`          | `authors` テーブルと連携（Eloquent）                  |
+| View       | `index.blade.php`     | `$authors` を `@foreach` で表示（テーブル形式）       |
+| Layout     | `default.blade.php`   | `@extends` による共通レイアウト提供                   |
+
+---
+
+## 📌 技術ポイント
+
+- **Eloquent**：`Author::all()` で全件取得
+- **Blade構文**：`@extends`, `@section`, `@foreach`
+- **レイアウト分離**：共通レイアウトに個別ビューをはめ込む構成
+- **Controller継承**：`extends Controller` により Laravel の機能を活用可能
+
+
+# 📚 Author管理アプリ（Create〜一覧表示）
+
+## 🧭 情報処理の流れ
+
+1. ユーザーが `/add` にアクセス
+2. `add.blade.php` の入力フォームを表示
+3. ユーザーが「name / age / nationality」を入力して送信（POST `/add`）
+4. `AuthorController@create()` が呼び出され、フォームデータを取得
+5. モデル `Author::create()` 経由でDBに登録
+6. 登録後、`redirect('/')` により一覧画面に遷移
+7. `AuthorController@index()` で登録済みデータを取得
+8. `index.blade.php` にて一覧表示
+
+---
+
+## 🗂 ファイル構成と役割
+
+| ファイル | 役割 | 詳細 |
+|---------|------|------|
+| `web.php` | ルート定義 | `/add` に GET（表示）と POST（保存）、 `/` に GET（一覧）を割り当て |
+| `AuthorController.php` | コントローラー | `add()`でフォーム表示、`create()`で保存、`index()`で一覧取得 |
+| `Author.php` | モデル | `$fillable` により安全なデータ登録が可能。EloquentでDB操作を抽象化 |
+| `add.blade.php` | 入力フォーム画面 | ユーザー入力フォームを提供（`@csrf` によるセキュリティ対策） |
+| `index.blade.php` | 一覧表示画面 | 登録された Author データを表として表示（※表示テンプレートは別途作成） |
+
+---
+
+## 🛠 技術補足ポイント
+
+- POST処理には `@csrf` を使用 → CSRF対策済み
+- モデルに `protected $fillable = [...]` を指定 → Mass assignment の安全管理
+- 登録後の `redirect('/')` により、一覧画面へ遷移 → UX向上
+
+---
+
+## 🚀 今後の展開候補
+
+- `create()` にバリデーション追加（`$request->validate()`）
+- 一覧画面に「編集・削除」リンク追加 → CRUD化へ発展
+- Copilot Pages で教材STEPを整理 → ノウハウ資産化
+
+## 1-16データの更新
+A[ユーザーが編集画面へアクセス] --> B[AuthorController@edit で対象データ取得]
+B --> C[edit.blade.php に表示]
+C --> D[ユーザーがフォームで編集＆送信]
+D --> E[AuthorController@update が受け取る]
+E --> F[リクエストデータを整形・更新処理]
+F --> G[DB に保存され、トップ画面へリダイレクト]
+
+📌 各ステップのポイント
+画面表示（GET）
+
+/edit?id=◯◯ にアクセス
+
+AuthorController@edit が該当 ID のデータを取得
+
+edit.blade.php に $form として表示
+
+フォーム送信（POST）
+
+入力された値が Request オブジェクトに格納される
+
+AuthorController@update で $request->id をもとに Author::find()->update() を実行
+
+更新後、redirect('/') で一覧ページへ
+
+🧭 Laravel教材STEP：削除処理の基本実装（CRUD "Delete"）
+🚀 処理概要フロー
+/delete?id={id} にアクセス → 該当Authorのデータ取得
+
+delete.blade.php にて削除対象データの表示＆確認
+
+ユーザーが「送信」ボタンをクリック → POST リクエスト送信
+
+Controller側で削除処理 → TOPページにリダイレクト
+
+🧩 使用ファイルと役割
+ファイル名	役割・機能
+AuthorController.php	削除画面表示（delete()）＋削除処理（remove()）
+delete.blade.php	対象Authorデータの表示＋削除フォーム
+web.php	/delete の GET/POST ルート定義
+
+🧠 Controller詳細
+php
+// 削除画面の表示（GET）
+public function delete(Request $request)
+{
+    $author = Author::find($request->id);
+    return view('delete', ['author' => $author]);
+}
+
+// 実際の削除処理（POST）
+public function remove(Request $request)
+{
+    Author::find($request->id)->delete();
+    return redirect('/');
+}
+✅ delete() は対象データの表示 ✅ remove() はデータの削除とリダイレクト処理 🚫 delete($request->id) のような直接削除はNG（deleteはインスタンスメソッド）
+
+🖥️ Bladeテンプレート（delete.blade.php）
+blade
+<form action="/delete?id={{ $author->id }}" method="POST">
+    @csrf
+    <button>送信</button>
+</form>
+UIで削除対象情報を確認
+
+明示的に「送信」操作で削除を許可
+
+🔍 理解のポイント
+find($request->id)：ID指定でモデル取得
+
+->delete()：取得したインスタンスに対して削除命令（引数なし）
