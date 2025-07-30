@@ -14,6 +14,29 @@ class AuthorController extends Controller
         return view('index', ['authors' => $authors]);
    }
 
+    public function find()
+    {
+        return view('find', ['input' => '']);
+    }
+
+    public function search(Request $request)
+    {
+        $item = Author::where('name', 'LIKE', "%{$request->input}%")->first();
+        $param = [
+            'input' => $request->input,
+            'item' => $item
+        ];
+        return view('find', $param);
+    }
+
+    public function bind(Author $author)
+    {
+        $data = [
+            'item' => $author,
+        ];
+        return view('author.binds', $data);
+    }
+
     // データ追加用ページの表示
     public function add()
     {

@@ -16,17 +16,22 @@
         text-align: center;
     }
 </style>
-@section('title', 'Authors 一覧')
+@section('title', '検索その2')
 
 @section('content')
+<h2>Author</h2>
 <table>
     <tr>
-        <th>DATA</th>
+        <th>ID</th>
+        <th>NAME</th>
+        <th>AGE</th>
+        <th>NATIONALITY</th>
     </tr>
-    @foreach ($authors as $author)
     <tr>
-        <td>{{$author->getDetail()}}</td>
+        <td> {{$item->id}} </td>
+        <td> {{$item->name}} </td>
+        <td> {{$item->age}} </td>
+        <td> {{$item->nationality}} </td>
     </tr>
-    @endforeach
 </table>
 @endsection
