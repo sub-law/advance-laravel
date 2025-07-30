@@ -417,3 +417,49 @@ UIで削除対象情報を確認
 find($request->id)：ID指定でモデル取得
 
 ->delete()：取得したインスタンスに対して削除命令（引数なし）
+
+##STEP-18-find-function
+##name属性を利用した検索処理の流れ
+flowchart TD
+    A[ユーザーが /find に GETアクセス] --> B[AuthorController@find がフォーム画面を表示]
+    B --> C[検索語を入力してフォーム送信（POST /find）]
+    C --> D[AuthorController@search が検索処理を実行]
+    D --> E[Author モデルの name カラムを LIKE検索]
+    E --> F[一致する最初の1件を取得 → $item に格納]
+    F --> G[検索語 $input と結果 $item をビュー find.blade.php へ渡す]
+    G --> H[Bladeで @isset($item) を用いて結果をテーブル表示]
+
+##モデル結合ルートの処理概要
+flowchart TD
+    A[GET /author/{id}] --> B[ルーティングで Author $author をバインド]
+    B --> C[AuthorController@bind($author) が実行]
+    C --> D[該当Authorデータをビューへ渡す]
+    D --> E[binds.blade.php で表示処理]
+
+##💡 技術的ポイント
+要素	意図・設計のポイント
+Route::get('/author/{author}', ...)	{author} の部分を自動で Author モデルにバインド（暗黙的モデル結合）
+public function bind(Author $author)	URLのIDに対応するレコードが $author として自動で取得される
+$item = $author → Bladeへ渡す	$item->name などでデータを表示可能に
+@extends, @section('title') など	レイアウトを継承しつつ、ページタイトルや装飾を追加
+
+##モデルにメソッドを追加
+🔧 処理内容の概要
+要素	内容
+追加メソッド	モデル Author に getDetail() を定義
+目的	Authorの属性をまとめて整形し、画面表示用に活用
+ビュー側	{{$author->getDetail()}} によって1行で表示処理完了
+効果	Bladeの記述量削減、可読性向上、ロジックの集約により再利用性アップ
+
+📘 getDetail() メソッドの設計意図
+php
+public function getDetail()
+{
+    $txt = 'ID:' . $this->id . ' ' . $this->name . '(' . $this->age .  '才' . ') ' . $this->nationality;
+    return $txt;
+}
+ID・名前・年齢・国籍 を1行に整形し、テキストとして返却
+
+将来的に Author モデルの表示方法を変更したいときは、このメソッドだけ修正すればOK
+
+ビューやコントローラーがロジックを持たず、単なる表示テンプレートとして整理される
