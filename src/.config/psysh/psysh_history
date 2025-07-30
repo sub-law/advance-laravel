@@ -4,3 +4,6 @@ exit
 App\Models\Author::count();
 App\Models\Author::pluck('name');
 exit
+Author::all();
+Author::find(1);
+exit
