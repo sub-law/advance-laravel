@@ -488,3 +488,53 @@ Author::find(1)	単体取得 → モデルインスタンスが返る（個別�
 id, name, age, nationality に加えて timestampも含む構造が確認できる
 
 nationalityの表記ゆれ（American / american / 日本）などもこの時点で把握可能
+
+# 2-20 バリデーション（FormRequest活用）
+
+## 🎯 目的
+- 入力値の妥当性チェックを通じたUX向上
+- バリデーション責務のControllerからの分離
+- エラーメッセージの日本語化・表示整形
+
+---
+
+## 🛤 処理概要（新規追加 `/add` の流れ）
+
+1. ブラウザフォームで name / age / nationality を入力・送信（POST /add）
+2. `AuthorController::create()` 実行 → `AuthorRequest` で自動バリデーション
+3. バリデーション
+   - 成功 → `Author::create()` で保存 → `/` にリダイレクト
+   - 失敗 → `/verror` に遷移 → `verror.blade.php` にエラー表示
+
+---
+
+## 🧩 技術ポイント
+
+### `AuthorRequest.php`
+- `rules()` によるバリデーションルール定義
+- `messages()` による日本語エラーメッセージ
+- `getRedirectUrl()` でエラー時遷移先を `/verror` に指定
+
+### `AuthorController.php`
+- `create()`/`update()` 内で `AuthorRequest` を型指定 → 自動バリデーション実行
+- 成功時：DB保存＋リダイレクト  
+  失敗時：`verror.blade.php` 表示
+
+### Bladeファイル（`add.blade.php` / `edit.blade.php`）
+- `@error('フィールド名')` で個別エラーメッセージ表示
+- `count($errors)` によるエラーフラグ判定
+- inputフォームと送信ボタンの基本構成
+
+---
+
+## 👀 UX設計・教材化観点
+
+| 項目 | 内容 |
+|------|------|
+| 責務分離 | Controllerからバリデーション処理を分離 |
+| エラー可視化 | `@error` による明示的なフィードバック |
+| 多言語対応 | `messages()` によるメッセージのローカライズ |
+| 画面遷移設計 | `getRedirectUrl()` で失敗時遷移制御 |
+
+---
+
