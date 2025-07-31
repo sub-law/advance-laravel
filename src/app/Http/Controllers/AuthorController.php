@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Author;
+// フォームリクエストの読み込み
+use App\Http\Requests\AuthorRequest;
 
 class AuthorController extends Controller
 {
@@ -44,7 +46,7 @@ class AuthorController extends Controller
     }
 
     // データ追加機能
-    public function create(Request $request)
+    public function create(AuthorRequest $request)
     {
         $form = $request->all();
         Author::create($form);
@@ -59,7 +61,7 @@ class AuthorController extends Controller
     }
 
     // 更新機能
-    public function update(Request $request)
+    public function update(AuthorRequest $request)
     {
         $form = $request->all();
         unset($form['_token']);
@@ -79,6 +81,11 @@ class AuthorController extends Controller
     {
         Author::find($request->id)->delete();
         return redirect('/');
+    }
+
+    public function verror()
+    {
+        return view('verror');
     }
     
 }
