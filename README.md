@@ -537,4 +537,46 @@ nationalityの表記ゆれ（American / american / 日本）などもこの時�
 | 画面遷移設計 | `getRedirectUrl()` で失敗時遷移制御 |
 
 ---
+##2-5で修正した箇所
+###add.blade.php 39行目
+#### ❌ 誤り
+`<input type="id">` → HTMLに存在しない型
 
+#### ✅ 修正
+`<input type="text" name="author_id">` → テキスト入力として正しく動作
+
+#### 💡 学び
+- HTMLの `type` 属性は仕様に沿って定義する必要がある
+- 存在しない型を指定すると、ブラウザが予期せぬ挙動をする可能性がある
+
+### ネストされたテーブルの背景色継承問題と解決策
+
+#### 問題
+- 外側テーブルの行背景色（白／グレー）が、内側テーブルの `<td>` に反映されず、常にグレーになっていた
+
+#### 原因
+- CSSで `td table tbody tr td` に `background-color: #EEEEEE !important;` が指定されていたため、外側のスタイルが上書きされていた
+
+#### 解決策
+- `background-color: inherit !important;` に変更し、親の背景色を継承させることで、意図通りの表示に修正(教材の進行上、最終的には元に戻した)
+
+#### 学び
+- `inherit` は親要素のスタイルを引き継ぐ便利な指定
+- `!important` を使う場合は、継承や優先順位に注意
+- ネスト構造では、親子関係のスタイル伝播を意識した設計が重要
+
+1. モデルにリレーションメソッドを定義
+   - Author: hasMany(Book::class)
+   - Book: belongsTo(Author::class)
+
+2. マイグレーションで外部キーを設定
+   - booksテーブルに author_id を追加
+
+3. コントローラーでリレーション付き取得
+   - Author::with('books')->get()
+
+4. ビューで展開
+   - @foreach ($author->books as $book)
+
+5. ルートで表示ページを設定
+   - Route::get('/relation', [AuthorController::class, 'relate'])
