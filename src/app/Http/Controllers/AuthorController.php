@@ -14,7 +14,7 @@ class AuthorController extends Controller
     {
         $authors = Author::all();
         return view('index', ['authors' => $authors]);
-   }
+    }
 
     public function find()
     {
@@ -87,5 +87,12 @@ class AuthorController extends Controller
     {
         return view('verror');
     }
-    
+
+    public function relate()
+    {
+        $hasItems = Author::has('book')->get();
+        $noItems = Author::doesntHave('book')->get();
+        $param = ['hasItems' => $hasItems, 'noItems' => $noItems];
+        return view('author.index', $param);
+    }
 }
