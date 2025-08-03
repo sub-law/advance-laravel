@@ -580,3 +580,7 @@ nationalityの表記ゆれ（American / american / 日本）などもこの時�
 
 5. ルートで表示ページを設定
    - Route::get('/relation', [AuthorController::class, 'relate'])
+
+TEP2-6：Eager LoadingによるN+1問題の回避
+❓ なぜこのSTEPが必要か
+Eloquentでリレーションを扱う際、$books->author のようにアクセスすると、各BookごとにAuthorを個別に取得するため、N+1問題が発生します。 これは、BookがN件あると、Author取得のためにN件の追加クエリが発生するという非効率な状態です。
