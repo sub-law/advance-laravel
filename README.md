@@ -417,3 +417,170 @@ UIで削除対象情報を確認
 find($request->id)：ID指定でモデル取得
 
 ->delete()：取得したインスタンスに対して削除命令（引数なし）
+
+##STEP-18-find-function
+##name属性を利用した検索処理の流れ
+flowchart TD
+    A[ユーザーが /find に GETアクセス] --> B[AuthorController@find がフォーム画面を表示]
+    B --> C[検索語を入力してフォーム送信（POST /find）]
+    C --> D[AuthorController@search が検索処理を実行]
+    D --> E[Author モデルの name カラムを LIKE検索]
+    E --> F[一致する最初の1件を取得 → $item に格納]
+    F --> G[検索語 $input と結果 $item をビュー find.blade.php へ渡す]
+    G --> H[Bladeで @isset($item) を用いて結果をテーブル表示]
+
+##モデル結合ルートの処理概要
+flowchart TD
+    A[GET /author/{id}] --> B[ルーティングで Author $author をバインド]
+    B --> C[AuthorController@bind($author) が実行]
+    C --> D[該当Authorデータをビューへ渡す]
+    D --> E[binds.blade.php で表示処理]
+
+##💡 技術的ポイント
+要素	意図・設計のポイント
+Route::get('/author/{author}', ...)	{author} の部分を自動で Author モデルにバインド（暗黙的モデル結合）
+public function bind(Author $author)	URLのIDに対応するレコードが $author として自動で取得される
+$item = $author → Bladeへ渡す	$item->name などでデータを表示可能に
+@extends, @section('title') など	レイアウトを継承しつつ、ページタイトルや装飾を追加
+
+##モデルにメソッドを追加
+🔧 処理内容の概要
+要素	内容
+追加メソッド	モデル Author に getDetail() を定義
+目的	Authorの属性をまとめて整形し、画面表示用に活用
+ビュー側	{{$author->getDetail()}} によって1行で表示処理完了
+効果	Bladeの記述量削減、可読性向上、ロジックの集約により再利用性アップ
+
+📘 getDetail() メソッドの設計意図
+php
+public function getDetail()
+{
+    $txt = 'ID:' . $this->id . ' ' . $this->name . '(' . $this->age .  '才' . ') ' . $this->nationality;
+    return $txt;
+}
+ID・名前・年齢・国籍 を1行に整形し、テキストとして返却
+
+将来的に Author モデルの表示方法を変更したいときは、このメソッドだけ修正すればOK
+
+ビューやコントローラーがロジックを持たず、単なる表示テンプレートとして整理される
+
+##2-19デバッグ
+🧐 解説：dd($authors) の動作と意味
+dd() は Dump and Die の略： → 中身をダンプ（出力）し、そこで処理を終了します。
+
+$authors = Author::all(); で取得した 全著者データのCollection をブラウザで表示します。
+
+return view() の処理は実行されないため、ビュー画面には遷移せず、取得結果だけが表示されます。
+
+✅ このddの有効活用ポイント
+シーン	内容
+データの取得チェック	モデルから期待通りのデータが来ているか確認
+リレーションが効いているか	$author->books などの結合確認にも便利
+nullや空Collectionの確認	意図した検索結果になっているかを即座に判断
+配列/オブジェクト構造の把握	Bladeでのループ処理や条件分岐の設計の参考に
+
+##🛠 Tinkerで試したことの意義
+試した構文	解説
+Author::all()	モデル全件取得 → Collectionとして返される構造を目視確認
+Author::find(1)	単体取得 → モデルインスタンスが返る（個別レコードの構造確認）
+エラーなく Author モデルが読み込まれていること（エイリアスも効いてる）
+
+id, name, age, nationality に加えて timestampも含む構造が確認できる
+
+nationalityの表記ゆれ（American / american / 日本）などもこの時点で把握可能
+
+# 2-20 バリデーション（FormRequest活用）
+
+## 🎯 目的
+- 入力値の妥当性チェックを通じたUX向上
+- バリデーション責務のControllerからの分離
+- エラーメッセージの日本語化・表示整形
+
+---
+
+## 🛤 処理概要（新規追加 `/add` の流れ）
+
+1. ブラウザフォームで name / age / nationality を入力・送信（POST /add）
+2. `AuthorController::create()` 実行 → `AuthorRequest` で自動バリデーション
+3. バリデーション
+   - 成功 → `Author::create()` で保存 → `/` にリダイレクト
+   - 失敗 → `/verror` に遷移 → `verror.blade.php` にエラー表示
+
+---
+
+## 🧩 技術ポイント
+
+### `AuthorRequest.php`
+- `rules()` によるバリデーションルール定義
+- `messages()` による日本語エラーメッセージ
+- `getRedirectUrl()` でエラー時遷移先を `/verror` に指定
+
+### `AuthorController.php`
+- `create()`/`update()` 内で `AuthorRequest` を型指定 → 自動バリデーション実行
+- 成功時：DB保存＋リダイレクト  
+  失敗時：`verror.blade.php` 表示
+
+### Bladeファイル（`add.blade.php` / `edit.blade.php`）
+- `@error('フィールド名')` で個別エラーメッセージ表示
+- `count($errors)` によるエラーフラグ判定
+- inputフォームと送信ボタンの基本構成
+
+---
+
+## 👀 UX設計・教材化観点
+
+| 項目 | 内容 |
+|------|------|
+| 責務分離 | Controllerからバリデーション処理を分離 |
+| エラー可視化 | `@error` による明示的なフィードバック |
+| 多言語対応 | `messages()` によるメッセージのローカライズ |
+| 画面遷移設計 | `getRedirectUrl()` で失敗時遷移制御 |
+
+---
+##2-5で修正した箇所
+###add.blade.php 39行目
+#### ❌ 誤り
+`<input type="id">` → HTMLに存在しない型
+
+#### ✅ 修正
+`<input type="text" name="author_id">` → テキスト入力として正しく動作
+
+#### 💡 学び
+- HTMLの `type` 属性は仕様に沿って定義する必要がある
+- 存在しない型を指定すると、ブラウザが予期せぬ挙動をする可能性がある
+
+### ネストされたテーブルの背景色継承問題と解決策
+
+#### 問題
+- 外側テーブルの行背景色（白／グレー）が、内側テーブルの `<td>` に反映されず、常にグレーになっていた
+
+#### 原因
+- CSSで `td table tbody tr td` に `background-color: #EEEEEE !important;` が指定されていたため、外側のスタイルが上書きされていた
+
+#### 解決策
+- `background-color: inherit !important;` に変更し、親の背景色を継承させることで、意図通りの表示に修正(教材の進行上、最終的には元に戻した)
+
+#### 学び
+- `inherit` は親要素のスタイルを引き継ぐ便利な指定
+- `!important` を使う場合は、継承や優先順位に注意
+- ネスト構造では、親子関係のスタイル伝播を意識した設計が重要
+
+1. モデルにリレーションメソッドを定義
+   - Author: hasMany(Book::class)
+   - Book: belongsTo(Author::class)
+
+2. マイグレーションで外部キーを設定
+   - booksテーブルに author_id を追加
+
+3. コントローラーでリレーション付き取得
+   - Author::with('books')->get()
+
+4. ビューで展開
+   - @foreach ($author->books as $book)
+
+5. ルートで表示ページを設定
+   - Route::get('/relation', [AuthorController::class, 'relate'])
+
+TEP2-6：Eager LoadingによるN+1問題の回避
+❓ なぜこのSTEPが必要か
+Eloquentでリレーションを扱う際、$books->author のようにアクセスすると、各BookごとにAuthorを個別に取得するため、N+1問題が発生します。 これは、BookがN件あると、Author取得のためにN件の追加クエリが発生するという非効率な状態です。
