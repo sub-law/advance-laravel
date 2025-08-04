@@ -584,3 +584,23 @@ nationalityの表記ゆれ（American / american / 日本）などもこの時�
 TEP2-6：Eager LoadingによるN+1問題の回避
 ❓ なぜこのSTEPが必要か
 Eloquentでリレーションを扱う際、$books->author のようにアクセスすると、各BookごとにAuthorを個別に取得するため、N+1問題が発生します。 これは、BookがN件あると、Author取得のためにN件の追加クエリが発生するという非効率な状態です。
+
+#＃アクセス回数を確認するために行ったこと
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+##追記　use Illuminate\Support\Facades\DB; 
+use App\Models\Book;
+
+class BookController extends Controller
+{
+    public function index()
+    {
+##追記      DB::enableQueryLog(); 
+        $items = Book::with('author')->get();
+##追記        dd(DB::getQueryLog());
+        return view('book.index', ['items' => $items]);
+    }
+}
