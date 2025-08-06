@@ -12,7 +12,7 @@ class AuthorController extends Controller
     //一覧ページの表示
     public function index()
     {
-        $authors = Author::all();
+        $authors = Author::Paginate(2);
         return view('index', ['authors' => $authors]);
     }
 

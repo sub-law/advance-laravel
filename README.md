@@ -640,3 +640,28 @@ class BookController extends Controller
 ```php
 $request->session()->get('キー名');
 
+## STEP3-4：ページネーションの導入（simplePaginate）
+
+- `AuthorController@index` にて `simplePaginate(4)` を使用
+- `index.blade.php` にて `{{ $authors->links() }}` でページリンク表示
+- `simplePaginate()` は「前へ・次へ」のみ表示される簡易版
+- 今後 `paginate()` との違いや、検索との併用時の挙動も検証予定
+## ページネーションの理解と検証ログ
+
+### 1. `simplePaginate` メソッド
+- **概要**: Laravelのページネーションメソッドの一つ。前後のページリンクのみを表示。
+- **用途**: シンプルなUIを求める場面で有効。ページ数の表示が不要な場合に適している。
+- **例**:
+  ```php
+  $posts = Post::simplePaginate(10);
+svg.w-5.h-5 {
+  /* paginateメソッドの矢印の大きさ調整のために追加 */
+  width: 30px;
+  height: 30px;
+  fill: #289ADC; /* 任意の色に変更可能 */
+  transition: fill 0.3s ease;
+}
+
+svg.w-5.h-5:hover {
+  fill: #FF5722; /* ホバー時の色変更 */
+}
