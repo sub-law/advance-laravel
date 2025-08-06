@@ -15,8 +15,23 @@
         background-color: #EEEEEE;
         text-align: center;
     }
+
+    svg.w-5.h-5 {
+        /*paginateメソッドの矢印の大きさ調整のために追加*/
+        width: 30px;
+        height: 30px;
+        fill: #289ADC;
+        /* 青色に変更 */
+        margin: 5px;
+        transition: fill 0.3s ease;
+    }
+
+    svg.w-5.h-5:hover {
+        fill: #FF5722;
+        /* ホバーでオレンジに変化 */
+    }
 </style>
-@section('title', 'Authors 一覧')
+@section('title', 'index.blade.php')
 
 @section('content')
 <table>
@@ -29,4 +44,5 @@
     </tr>
     @endforeach
 </table>
+{{ $authors->links() }}
 @endsection
