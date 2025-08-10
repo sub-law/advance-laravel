@@ -10,9 +10,9 @@ class BookController extends Controller
 {
     public function index()
     {
-        DB::enableQueryLog();
+        //DB::enableQueryLog();
         $items = Book::with('author')->get();
-        dd(DB::getQueryLog());
+       // dd(DB::getQueryLog());
         return view('book.index', ['items' => $items]);
     }
     public function add()

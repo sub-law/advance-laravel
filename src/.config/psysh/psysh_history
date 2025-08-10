@@ -13,3 +13,6 @@ DB::enableQueryLog();
 $books = Book::with('author')->get();
 DB::getQueryLog();
 exit
+Person::all(); 
+Person::find(1);
+Person::withTrashed()->find(1);
