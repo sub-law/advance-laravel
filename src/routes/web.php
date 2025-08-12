@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\SessionController;
 use App\Models\Product;
+use App\Http\Controllers\PenController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -53,3 +54,6 @@ foreach($products as $product){
 echo $product.'<br>';
      }
  });
+Route::get('fill', [PenController::class, 'fillPen']);
+Route::get('create', [PenController::class, 'createPen']);
+Route::get('insert', [PenController::class, 'insertPen']);
